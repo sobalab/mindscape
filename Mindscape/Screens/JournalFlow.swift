@@ -4,7 +4,7 @@ import SwiftUI
 /// pushes the saved-confirmation screen.
 struct JournalFlow: View {
     @Environment(AppModel.self) private var model
-    @State private var path = NavigationPath()
+    @State private var path: [Route] = []
     @State private var query = ""
 
     private enum Route: Hashable {
@@ -14,28 +14,34 @@ struct JournalFlow: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            EntriesList(query: $query) { path.append(Route.compose) }
+            EntriesList(query: $query) { path.append(.compose) }
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .compose:
                         JournalComposer { entry in
                             model.addEntry(entry)
-                            path.append(Route.saved(entry.id))
+                            path.append(.saved(entry.id))
                         }
                     case .saved(let id):
                         EntrySavedScreen(entry: model.entries.first { $0.id == id }) {
-                            path = NavigationPath()
+                            path.removeAll()
                         }
                     }
                 }
         }
         .tint(.accentPurple)
-        // Home's "Answer Prompt" jumps straight into the composer.
-        .onChange(of: model.wantsNewEntry) { _, wants in
-            guard wants else { return }
-            path.append(Route.compose)
-            model.wantsNewEntry = false
-        }
+        // Home's "Answer Prompt" jumps straight into the composer. The flag may already
+        // be set by the time this view is created (Home flips it, then switches tabs,
+        // which builds JournalFlow fresh) — so consume it both on appear and on change,
+        // since onChange alone never sees that initial value.
+        .onAppear { openComposerIfRequested() }
+        .onChange(of: model.wantsNewEntry) { _, _ in openComposerIfRequested() }
+    }
+
+    private func openComposerIfRequested() {
+        guard model.wantsNewEntry else { return }
+        if path.last != .compose { path.append(.compose) }
+        model.wantsNewEntry = false
     }
 }
 
@@ -141,10 +147,19 @@ struct EntryCard: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.title)
-                                .msStyle(.msCardTitle, tracking: 0.32)
-                                .foregroundStyle(.white)
-                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 6) {
+                                Text(entry.title)
+                                    .msStyle(.msCardTitle, tracking: 0.32)
+                                    .foregroundStyle(.white)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                // Marks an entry written in answer to an AI prompt.
+                                if entry.promptID != nil {
+                                    Image("CheckCircle")
+                                        .resizable()
+                                        .frame(width: 15, height: 15)
+                                        .accessibilityLabel("Answered a prompt")
+                                }
+                            }
                             Text(entry.excerpt)
                                 .msStyle(.msQuote, tracking: 0.24)
                                 .foregroundStyle(.textMuted)
@@ -176,17 +191,19 @@ struct EntryCard: View {
 // MARK: - Composer
 
 struct JournalComposer: View {
+    @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var mood: Mood?
     @State private var text = ""
     @State private var tags: Set<String> = []
     @State private var showingTagField = false
     @State private var newTag = ""
+    /// The prompt this session is answering, captured on appear.
+    @State private var prompt: AIPrompt?
     @FocusState private var editorFocused: Bool
 
     let onSave: (JournalEntry) -> Void
 
-    private let prompt = "You mentioned feeling overwhelmed by deadlines twice this week. What is one small task you can let go of today to create space?"
     private let characterLimit = 1000
 
     var body: some View {
@@ -220,8 +237,10 @@ struct JournalComposer: View {
                         body: text,
                         mood: mood,
                         tags: Array(tags).sorted(),
-                        date: .now
+                        date: .now,
+                        promptID: prompt?.id
                     ))
+                    model.promptToAnswer = nil
                 }
             }
             .padding(.horizontal, Theme.screenInset)
@@ -231,6 +250,8 @@ struct JournalComposer: View {
         .scrollDismissesKeyboard(.interactively)
         .mindscapeBackground()
         .toolbar(.hidden, for: .navigationBar)
+        // The prompt was chosen on Home (or defaults to the featured one).
+        .onAppear { if prompt == nil { prompt = model.promptToAnswer ?? model.featuredPrompt } }
     }
 
     private var isValid: Bool {
@@ -245,19 +266,10 @@ struct JournalComposer: View {
         return text.split(separator: " ").prefix(3).joined(separator: " ").capitalized
     }
 
+    @ViewBuilder
     private var promptCard: some View {
-        PromptCard {
-            VStack(alignment: .leading, spacing: 0) {
-                Badge(text: "BASED ON YOUR JOURNALS").padding(.bottom, 18)
-                Text(prompt)
-                    .font(.msPrompt)
-                    .foregroundStyle(.textPrimary)
-                    .lineSpacing(1)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 22)
+        if let prompt {
+            AIPromptCard(text: prompt.text, isAnswered: model.isPromptAnswered(prompt))
         }
     }
 

@@ -46,7 +46,7 @@ struct MainTabShell: View {
                 switch selection {
                 case .home:     HomeScreen(selection: $selection)
                 case .journal:  JournalFlow()
-                case .insights: InsightsScreen()
+                case .insights: InsightsFlow()
                 case .settings: ProfileFlow()
                 }
             }
@@ -112,6 +112,8 @@ struct DebugScreenHost: View {
                 NotificationsScreen()
             case "connect":
                 ConnectSupportScreen()
+            case "observation":
+                AIObservationDetail()
             default:
                 ContentUnavailableView("Unknown screen", systemImage: "questionmark")
             }

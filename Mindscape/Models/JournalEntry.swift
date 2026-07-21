@@ -18,6 +18,18 @@ enum Mood: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// A suggested reflection prompt. Its identity is what lets a completed prompt read as
+/// "done" everywhere it appears — Home, the composer, and the journal list.
+struct AIPrompt: Identifiable, Hashable {
+    let id: UUID
+    let text: String
+
+    init(id: UUID = UUID(), text: String) {
+        self.id = id
+        self.text = text
+    }
+}
+
 struct JournalEntry: Identifiable, Hashable {
     let id: UUID
     var title: String
@@ -25,15 +37,18 @@ struct JournalEntry: Identifiable, Hashable {
     var mood: Mood?
     var tags: [String]
     var date: Date
+    /// The prompt this entry answered, if it was written from one.
+    var promptID: UUID?
 
     init(id: UUID = UUID(), title: String, body: String, mood: Mood? = nil,
-         tags: [String] = [], date: Date) {
+         tags: [String] = [], date: Date, promptID: UUID? = nil) {
         self.id = id
         self.title = title
         self.body = body
         self.mood = mood
         self.tags = tags
         self.date = date
+        self.promptID = promptID
     }
 
     /// How Home labels a date: "Yesterday", then the weekday name for the past week,
@@ -68,4 +83,12 @@ struct MoodPoint: Identifiable, Hashable {
     let date: Date
     /// 1…5, matching `Mood`'s ordering.
     let score: Int
+}
+
+/// Average mood for a weekday — backs the "why" behind the AI observation.
+struct WeekdayMood: Identifiable, Hashable {
+    let id = UUID()
+    let day: String
+    /// 0…5.
+    let score: Double
 }

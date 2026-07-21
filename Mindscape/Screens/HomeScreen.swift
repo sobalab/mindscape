@@ -28,8 +28,6 @@ struct HomeScreen: View {
         .scrollIndicators(.hidden)
     }
 
-    private let promptText = "You mentioned feeling overwhelmed by deadlines twice this week. What is one small task you can let go of today to create space?"
-
     // MARK: Sections
 
     private var header: some View {
@@ -60,27 +58,12 @@ struct HomeScreen: View {
                     .foregroundStyle(.accentCyan)
             }
 
-            PromptCard {
-                VStack(alignment: .leading, spacing: 0) {
-                    Badge(text: "BASED ON YOUR JOURNALS")
-                        .padding(.bottom, 18)
-
-                    Text(promptText)
-                        .font(.msPrompt)
-                        .foregroundStyle(.textPrimary)
-                        .lineSpacing(1)                       // Figma: leading 1.3
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 24)
-
-                    PrimaryButton(title: "Answer Prompt", showsArrow: true) {
-                        // The composer lives in the Journal tab; hand off via the model.
-                        model.wantsNewEntry = true
-                        selection = .journal
-                    }
-                    .padding(.horizontal, 12)                 // card button is 300pt inside a 352pt card
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 22)
+            AIPromptCard(text: model.featuredPrompt.text,
+                         isAnswered: model.isPromptAnswered(model.featuredPrompt)) {
+                // Hand the specific prompt to the composer over in the Journal tab.
+                model.promptToAnswer = model.featuredPrompt
+                model.wantsNewEntry = true
+                selection = .journal
             }
         }
     }

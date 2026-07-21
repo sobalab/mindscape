@@ -44,13 +44,32 @@ final class AppModel {
     func addEntry(_ entry: JournalEntry) {
         entries.append(entry)
         streak += 1
+        if let promptID = entry.promptID { answeredPromptIDs.insert(promptID) }
+    }
+
+    // MARK: AI prompts
+
+    var prompts: [AIPrompt] = SampleData.prompts
+    /// Prompts the user has already reflected on. Drives the "done" affordance.
+    var answeredPromptIDs: Set<UUID> = []
+    /// The prompt the composer is currently answering (set when Home hands off).
+    var promptToAnswer: AIPrompt?
+
+    /// The prompt surfaced on Home and pre-filled in the composer.
+    var featuredPrompt: AIPrompt { prompts[0] }
+
+    func isPromptAnswered(_ prompt: AIPrompt) -> Bool {
+        answeredPromptIDs.contains(prompt.id)
     }
 
     // MARK: Insights
 
     var moodTrend: [MoodPoint] = SampleData.moodTrend
     var topThemes: [ThemeStat] = SampleData.topThemes
+    var weekdayMood: [WeekdayMood] = SampleData.weekdayMood
     var aiObservation = "Your mood tends to improve mid-week. Mornings are harder, especially Mondays."
+    /// Number of entries the observation was drawn from — shown on the detail page.
+    var observationEntryCount = 17
 
     // MARK: Settings toggles
 
@@ -105,6 +124,18 @@ enum SampleData {
         .init(name: "Sleep",      share: 0.22),
     ]
 
+    /// Average mood per weekday — Mondays lowest, midweek highest, matching the
+    /// observation the AI surfaces.
+    static let weekdayMood: [WeekdayMood] = [
+        .init(day: "Mon", score: 2.1),
+        .init(day: "Tue", score: 3.0),
+        .init(day: "Wed", score: 4.2),
+        .init(day: "Thu", score: 4.4),
+        .init(day: "Fri", score: 3.6),
+        .init(day: "Sat", score: 3.9),
+        .init(day: "Sun", score: 2.8),
+    ]
+
     /// The onboarding answer sets, in question order.
     static let reasons = ["reduce stress", "track emotions", "manage anxiety",
                           "self-reflection", "manage depression", "mental clarity"]
@@ -118,6 +149,11 @@ enum SampleData {
 
     static let challenges = ["anxiety", "depression", "burnout", "insomnia",
                              "OCD", "low motivation", "self-doubt", "stress"]
+
+    /// The reflection prompts Home rotates through. The first is the featured one.
+    static let prompts: [AIPrompt] = [
+        AIPrompt(text: "You mentioned feeling overwhelmed by deadlines twice this week. What is one small task you can let go of today to create space?"),
+    ]
 
     static let promptFrequencies = ["daily", "weekly", "occasional"]
 

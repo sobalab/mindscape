@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The five-face mood picker on the journal composer. Circles at 60pt; the selected one
-/// swaps the flat fill for `tag-linear-active` and brightens its label.
+/// The five-face mood picker on the journal composer. Each mood is a vertical pill
+/// holding the emoji above its label; the selected one swaps the flat fill for
+/// `tag-linear-active` and brightens the label.
 struct MoodPicker: View {
     @Binding var selection: Mood?
 
@@ -11,9 +12,8 @@ struct MoodPicker: View {
     )
 
     var body: some View {
-        // Figma's 60pt circles total 356pt across a 352pt column, so the gaps flex
-        // rather than being fixed — otherwise the row overflows the screen.
-        HStack(spacing: 0) {
+        // Pills flex to share the row so five fit across the screen at any width.
+        HStack(spacing: 10) {
             ForEach(Mood.allCases) { mood in
                 let isSelected = selection == mood
                 Button {
@@ -21,20 +21,21 @@ struct MoodPicker: View {
                         selection = isSelected ? nil : mood
                     }
                 } label: {
-                    VStack(spacing: 5) {
+                    VStack(spacing: 8) {
                         Text(mood.emoji).font(.system(size: 26))
                         Text(mood.label)
                             .font(.custom(PJS.bold, size: 12, relativeTo: .caption))
                             .fixedSize()
                             .foregroundStyle(isSelected ? Color.moodLabelSelected : Color.stepLabel)
                     }
-                    .frame(width: 60, height: 60)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
                     .background {
-                        Circle()
-                            .fill(isSelected ? AnyShapeStyle(Self.activeFill)
-                                             : AnyShapeStyle(Color.tagBgUnactive))
+                        let shape = RoundedRectangle(cornerRadius: 24)
+                        shape.fill(isSelected ? AnyShapeStyle(Self.activeFill)
+                                              : AnyShapeStyle(Color.tagBgUnactive))
                             .overlay {
-                                Circle().strokeBorder(
+                                shape.strokeBorder(
                                     isSelected ? Color.tagStroke : Color.tagStrokeUnactive,
                                     lineWidth: isSelected ? 2.4 : 3
                                 )
@@ -42,7 +43,6 @@ struct MoodPicker: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity)
                 .accessibilityLabel(mood.label)
                 .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
             }

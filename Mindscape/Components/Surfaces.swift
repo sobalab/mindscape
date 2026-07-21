@@ -33,6 +33,74 @@ struct PromptCard<Content: View>: View {
     }
 }
 
+/// The AI reflection prompt card, shared by Home and the composer so a completed prompt
+/// reads the same in both places. When answered it gains a teal check and, on Home,
+/// swaps its "Answer Prompt" button for an "Answered" state.
+struct AIPromptCard: View {
+    let text: String
+    var isAnswered: Bool = false
+    /// Provided on Home (shows the action button); omitted in the composer, which just
+    /// displays the prompt above its own Save button.
+    var onAnswer: (() -> Void)? = nil
+
+    var body: some View {
+        PromptCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    Badge(text: "BASED ON YOUR JOURNALS")
+                    Spacer()
+                    if isAnswered {
+                        Image("CheckCircle")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .accessibilityLabel("Answered")
+                    }
+                }
+                .padding(.bottom, 18)
+
+                Text(text)
+                    .font(.msPrompt)
+                    .foregroundStyle(.textPrimary)
+                    .lineSpacing(1)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let onAnswer {
+                    Group {
+                        if isAnswered {
+                            answeredPill
+                        } else {
+                            PrimaryButton(title: "Answer Prompt", showsArrow: true, action: onAnswer)
+                        }
+                    }
+                    .padding(.top, 24)
+                    .padding(.horizontal, 12)   // card button is 300pt inside a 352pt card
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 22)
+        }
+    }
+
+    /// The done state of the action row — teal, non-interactive.
+    private var answeredPill: some View {
+        HStack(spacing: 8) {
+            Image("CheckCircle").resizable().frame(width: 22, height: 22)
+            Text("Answered").font(.msButton)
+        }
+        .foregroundStyle(Color.accentCyan)
+        .frame(maxWidth: .infinity)
+        .frame(height: 53)
+        .background {
+            let shape = RoundedRectangle(cornerRadius: Theme.pillRadius)
+            shape.fill(Color.observationBg).overlay {
+                shape.strokeBorder(.tealStroke, lineWidth: 2)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Prompt answered")
+    }
+}
+
 /// Two-line screen title: first line in plain text, second painted with `text-linear`.
 /// Used on Home, every onboarding question, Journal, Insights, and Settings.
 struct ScreenTitle: View {

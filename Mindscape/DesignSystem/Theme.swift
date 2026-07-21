@@ -54,8 +54,9 @@ enum Theme {
     static let screenInset: CGFloat = 25
     static let cardRadius: CGFloat = 25
     static let pillRadius: CGFloat = 30
-    /// Height of the tab bar plus its bottom offset, so scroll views can clear it.
-    static let tabBarClearance: CGFloat = 100
+    /// Bottom padding scroll views add so their last row clears the floating tab bar
+    /// (70pt bar + 14pt offset + a comfortable gap) instead of hiding behind it.
+    static let tabBarClearance: CGFloat = 150
 }
 
 // Color symbols (.textPrimary, .accentPurple, .tagBgUnactive, …) are generated from

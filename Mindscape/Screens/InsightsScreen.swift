@@ -1,8 +1,36 @@
 import SwiftUI
 import Charts
 
+/// The Insights tab. Wrapped in a stack so the AI observation can push a detail page.
+struct InsightsFlow: View {
+    @State private var path: [InsightsRoute] = {
+        // QA: `-observationDetail` opens straight onto the detail to test its back button.
+        ProcessInfo.processInfo.arguments.contains("-observationDetail") ? [.observation] : []
+    }()
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            InsightsScreen()
+                .navigationDestination(for: InsightsRoute.self) { route in
+                    switch route {
+                    // Pop explicitly from the path: with the nav bar hidden, the
+                    // environment's `dismiss` doesn't reliably pop a value-pushed view.
+                    case .observation: AIObservationDetail { path.removeLast() }
+                    }
+                }
+        }
+        .tint(.accentPurple)
+    }
+}
+
+enum InsightsRoute: Hashable {
+    case observation
+}
+
 struct InsightsScreen: View {
     @Environment(AppModel.self) private var model
+    /// Drives the fill-up animation; flipped on first appear.
+    @State private var revealed = false
 
     var body: some View {
         ScrollView {
@@ -19,17 +47,25 @@ struct InsightsScreen: View {
 
                 SectionHeader("TOP THEMES THIS MONTH").padding(.bottom, 18)
 
-                ForEach(model.topThemes) { theme in
-                    ThemeBar(theme: theme).padding(.bottom, 20)
+                ForEach(Array(model.topThemes.enumerated()), id: \.element.id) { index, theme in
+                    ThemeBar(theme: theme, revealed: revealed, index: index)
+                        .padding(.bottom, 20)
                 }
 
-                observationCard.padding(.top, 14)
+                observationLink.padding(.top, 14)
             }
             .padding(.horizontal, Theme.screenInset)
             .padding(.top, 12)
             .padding(.bottom, Theme.tabBarClearance)
         }
         .scrollIndicators(.hidden)
+        .mindscapeBackground()
+        .toolbar(.hidden, for: .navigationBar)
+        // Grow the graphs each time the tab is opened.
+        .onAppear {
+            revealed = false
+            withAnimation(.easeOut(duration: 0.7)) { revealed = true }
+        }
     }
 
     // MARK: Mood trend
@@ -57,11 +93,12 @@ struct InsightsScreen: View {
                 Chart(model.moodTrend) { point in
                     // `cornerRadius` rounds every corner, but the design's bars are
                     // flat-bottomed. Starting each bar below the y-domain lets the plot
-                    // area clip the lower curve away.
+                    // area clip the lower curve away. `revealed` scales the height from
+                    // zero so the bars grow up on appear.
                     BarMark(
                         x: .value("Date", point.date, unit: .day),
                         yStart: .value("Base", -0.6),
-                        yEnd: .value("Mood", Double(point.score)),
+                        yEnd: .value("Mood", Double(point.score) * (revealed ? 1 : 0)),
                         width: .fixed(19)
                     )
                     // The design highlights the good days; the rest recede.
@@ -100,7 +137,22 @@ struct InsightsScreen: View {
 
     // MARK: AI observation
 
-    private var observationCard: some View {
+    private var observationLink: some View {
+        NavigationLink(value: InsightsRoute.observation) {
+            ObservationCard(text: model.aiObservation, showsChevron: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens the reasoning behind this observation")
+    }
+}
+
+/// The teal AI-observation card. Shared by the Insights list (tappable) and the top of
+/// the detail page (static).
+struct ObservationCard: View {
+    let text: String
+    var showsChevron: Bool = false
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 7) {
                 Image("AIIcon")
@@ -109,10 +161,16 @@ struct InsightsScreen: View {
                 Badge(text: "AI OBSERVATION",
                       foreground: Color.observationBadgeText,
                       background: Color.observationBadgeBg)
+                Spacer()
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.observationBadgeText)
+                }
             }
             .padding(.bottom, 16)
 
-            Text(model.aiObservation)
+            Text(text)
                 .font(.custom(PJS.extraBold, size: 20, relativeTo: .title3))
                 .foregroundStyle(.textPrimary)
                 .lineSpacing(1)
@@ -130,9 +188,12 @@ struct InsightsScreen: View {
     }
 }
 
-/// One "TOP THEMES" row — label, percentage, and a track/fill progress bar.
+/// One "TOP THEMES" row — label, percentage, and a track/fill progress bar that fills
+/// in on appear, staggered by row.
 struct ThemeBar: View {
     let theme: ThemeStat
+    var revealed: Bool = true
+    var index: Int = 0
 
     var body: some View {
         VStack(spacing: 14) {
@@ -150,7 +211,8 @@ struct ThemeBar: View {
                     Capsule().fill(Color.progressTrack)
                     Capsule()
                         .fill(Color.progressFill)
-                        .frame(width: proxy.size.width * theme.share)
+                        .frame(width: proxy.size.width * theme.share * (revealed ? 1 : 0))
+                        .animation(.easeOut(duration: 0.6).delay(Double(index) * 0.08), value: revealed)
                 }
             }
             .frame(height: 7)
@@ -162,8 +224,5 @@ struct ThemeBar: View {
 }
 
 #Preview {
-    InsightsScreen()
-        .frame(maxHeight: .infinity)
-        .mindscapeBackground()
-        .environment(AppModel())
+    InsightsFlow().environment(AppModel())
 }
