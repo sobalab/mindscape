@@ -9,6 +9,11 @@ struct MindscapeApp: App {
         if args.contains("-skipOnboarding") {
             model.hasOnboarded = true
         }
+        // `-startTab journal|insights|settings` opens straight onto a tab.
+        if let index = args.firstIndex(of: "-startTab"), index + 1 < args.count,
+           let tab = AppTab(rawValue: args[index + 1]) {
+            model.selectedTab = tab
+        }
         // `-answerPrompt` reproduces tapping Home's "Answer Prompt" for QA.
         if args.contains("-answerPrompt") {
             model.wantsNewEntry = true

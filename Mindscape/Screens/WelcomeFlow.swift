@@ -4,6 +4,7 @@ import SwiftUI
 /// back chevron and back-swipe come for free; the last question flips `hasOnboarded`,
 /// which hands control to the tab shell.
 struct WelcomeFlow: View {
+    @Environment(AppModel.self) private var model
     @State private var path: [OnboardingStep] = []
 
     enum OnboardingStep: Int, Hashable, CaseIterable {
@@ -14,7 +15,10 @@ struct WelcomeFlow: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            WelcomeScreen { path = [.reasons] }
+            // Sign up runs onboarding; logging in is a returning user, so it lands
+            // straight on Home.
+            WelcomeScreen(onSignUp: { path = [.reasons] },
+                          onLogIn: { model.hasOnboarded = true })
                 .navigationDestination(for: OnboardingStep.self) { step in
                     OnboardingQuestion(step: step) {
                         if let next = step.next { path.append(next) }
@@ -26,7 +30,8 @@ struct WelcomeFlow: View {
 }
 
 struct WelcomeScreen: View {
-    let onStart: () -> Void
+    let onSignUp: () -> Void
+    let onLogIn: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
@@ -52,8 +57,8 @@ struct WelcomeScreen: View {
                 Spacer(minLength: 20)
 
                 VStack(spacing: 24) {
-                    PrimaryButton(title: "SIGN UP", action: onStart)
-                    SecondaryButton(title: "LOG IN", action: onStart)
+                    PrimaryButton(title: "SIGN UP", action: onSignUp)
+                    SecondaryButton(title: "LOG IN", action: onLogIn)
                     Text("By continuing, you agree to our Terms.")
                         .msStyle(.msSection, tracking: 0.28)
                         .foregroundStyle(.textMuted)
@@ -208,7 +213,9 @@ struct OnboardingQuestion: View {
     }
 
     private var healthcareCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        @Bindable var model = model
+
+        return VStack(alignment: .leading, spacing: 0) {
             Text("Connect with a healthcare provider?")
                 .font(.custom(PJS.bold, size: 20, relativeTo: .title3))
                 .foregroundStyle(.textPrimary)
@@ -219,10 +226,10 @@ struct OnboardingQuestion: View {
                 .font(.custom(PJS.extraBold, size: 18, relativeTo: .body))
                 .foregroundStyle(.textMuted)
                 .lineSpacing(4)
-                .padding(.bottom, 8)
+                .padding(.bottom, 18)
 
-            ArrowLink(title: "SKIP FOR NOW") {}
-                .padding(.leading, -10)   // cancels the link's own tap padding
+            CheckboxRow(title: "Skip for now — connect later",
+                        isOn: $model.connectProviderLater)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 26)

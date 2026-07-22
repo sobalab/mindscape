@@ -30,21 +30,17 @@ struct RootView: View {
 /// The tabbed shell. Each tab owns its own `NavigationStack` so pushes stay scoped
 /// to a tab, and the custom bar floats above the content.
 struct MainTabShell: View {
-    // Launch with `-startTab journal|insights|settings` to open straight onto a tab.
-    @State private var selection: AppTab = {
-        let args = ProcessInfo.processInfo.arguments
-        guard let index = args.firstIndex(of: "-startTab"), index + 1 < args.count,
-              let tab = AppTab(rawValue: args[index + 1]) else { return .home }
-        return tab
-    }()
+    @Environment(AppModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
+
         ZStack(alignment: .bottom) {
             MindscapeBackground()
 
             Group {
-                switch selection {
-                case .home:     HomeScreen(selection: $selection)
+                switch model.selectedTab {
+                case .home:     HomeScreen()
                 case .journal:  JournalFlow()
                 case .insights: InsightsFlow()
                 case .settings: ProfileFlow()
@@ -53,7 +49,7 @@ struct MainTabShell: View {
 
             TabBarScrim()
 
-            MindscapeTabBar(selection: $selection)
+            MindscapeTabBar(selection: $model.selectedTab)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }

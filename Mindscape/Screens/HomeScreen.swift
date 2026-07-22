@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HomeScreen: View {
     @Environment(AppModel.self) private var model
-    @Binding var selection: AppTab
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
@@ -39,7 +38,7 @@ struct HomeScreen: View {
                 ScreenTitle(first: "Find your", second: "inner calm")
             }
             Spacer()
-            Button { selection = .settings } label: {
+            Button { model.selectedTab = .settings } label: {
                 AvatarBadge(initials: model.initials)
             }
             .buttonStyle(.plain)
@@ -63,7 +62,7 @@ struct HomeScreen: View {
                 // Hand the specific prompt to the composer over in the Journal tab.
                 model.promptToAnswer = model.featuredPrompt
                 model.wantsNewEntry = true
-                selection = .journal
+                model.selectedTab = .journal
             }
         }
     }
@@ -71,7 +70,7 @@ struct HomeScreen: View {
     private var reflectionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "RECENT REFLECTION") {
-                Button { selection = .journal } label: {
+                Button { model.selectedTab = .journal } label: {
                     Text("History")
                         .msStyle(.msSection, tracking: 0.28)
                         .foregroundStyle(.accentPurple)

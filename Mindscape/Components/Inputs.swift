@@ -75,6 +75,38 @@ struct FieldLabel: View {
     }
 }
 
+/// A labeled checkbox — a rounded square that fills with the accent when checked.
+struct CheckboxRow: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button { isOn.toggle() } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    let shape = RoundedRectangle(cornerRadius: 7)
+                    shape.fill(isOn ? AnyShapeStyle(Theme.primaryButton) : AnyShapeStyle(Color.tagBgUnactive))
+                    shape.strokeBorder(isOn ? Color.accentPurple : Color.tagStrokeUnactive, lineWidth: 2)
+                    if isOn {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.textPrimary)
+                    }
+                }
+                .frame(width: 26, height: 26)
+
+                Text(title)
+                    .font(.custom(PJS.bold, size: 16, relativeTo: .callout))
+                    .foregroundStyle(isOn ? Color.accentPurple : Color.chipInactiveText)
+                Spacer(minLength: 0)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
 /// A left-aligned text link with the rotated arrow — "SKIP FOR NOW →".
 struct ArrowLink: View {
     let title: String

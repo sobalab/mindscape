@@ -9,6 +9,11 @@ final class AppModel {
     // MARK: Onboarding
 
     var hasOnboarded = false
+    /// Which tab the shell shows. Lives here so any screen can switch tabs — Home's
+    /// avatar/history, "Answer Prompt", and "View Insights" all navigate cross-tab.
+    var selectedTab: AppTab = .home
+    /// Onboarding healthcare checkbox — the user opts to connect a provider later.
+    var connectProviderLater = false
     /// Q1 — multi-select.
     var reasons: Set<String> = []
     /// Q2 — single-select.

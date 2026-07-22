@@ -23,9 +23,14 @@ struct JournalFlow: View {
                             path.append(.saved(entry.id))
                         }
                     case .saved(let id):
-                        EntrySavedScreen(entry: model.entries.first { $0.id == id }) {
-                            path.removeAll()
-                        }
+                        EntrySavedScreen(
+                            entry: model.entries.first { $0.id == id },
+                            onDone: { path.removeAll() },
+                            onViewInsights: {
+                                path.removeAll()
+                                model.selectedTab = .insights
+                            }
+                        )
                     }
                 }
         }
@@ -338,7 +343,10 @@ struct JournalComposer: View {
 struct EntrySavedScreen: View {
     @Environment(AppModel.self) private var model
     let entry: JournalEntry?
+    /// Returns to the journal entries list (where the new entry now appears).
     let onDone: () -> Void
+    /// Jumps to the Insights tab.
+    var onViewInsights: () -> Void = {}
 
     private static let doneGradient = Theme.textLinear
     private static let mutedGradient = LinearGradient(
@@ -389,7 +397,7 @@ struct EntrySavedScreen: View {
                 .buttonStyle(.plain)
                 .padding(.bottom, 16)
 
-                Button(action: onDone) {
+                Button(action: onViewInsights) {
                     Text("View Insights")
                         .font(.msButton)
                         .foregroundStyle(Color.optionSubtitle)
