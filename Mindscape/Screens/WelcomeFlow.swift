@@ -107,7 +107,7 @@ struct OnboardingQuestion: View {
         // The CTA is bottom-anchored in every onboarding frame. Pinning it here (rather
         // than inline) keeps it above the keyboard on the "about" step, so it stays
         // tappable while the Age numeric keypad — which has no return key — is up.
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             PrimaryButton(title: step == .about ? "Let’s Go" : "Continue",
                           isEnabled: canContinue) {
                 dismissKeyboard()
@@ -116,11 +116,8 @@ struct OnboardingQuestion: View {
             .padding(.horizontal, Theme.screenInset)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(
-                LinearGradient(colors: [Color.backgroundBottom.opacity(0), Color.backgroundBottom],
-                               startPoint: .top, endPoint: .bottom)
-                    .allowsHitTesting(false)
-            )
+            // No scrim — the shared background gradient shows through behind the button
+            // and continues seamlessly to the device's bottom edge.
         }
         .mindscapeBackground()
         .toolbarBackground(.hidden, for: .navigationBar)

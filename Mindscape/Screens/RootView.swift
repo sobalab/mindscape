@@ -71,12 +71,14 @@ struct TabBarScrim: View {
     var body: some View {
         // Spans the whole screen so the solid section reaches the physical bottom edge;
         // an intrinsically-sized stack stops at the safe area and lets content peek out.
+        // Fades to the gradient's own bottom colour (not black) so it blends seamlessly
+        // with the background rather than reading as a separate dark band.
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            LinearGradient(colors: [.black.opacity(0), .black],
+            LinearGradient(colors: [Color.backgroundBottom.opacity(0), Color.backgroundBottom],
                            startPoint: .top, endPoint: .bottom)
                 .frame(height: fadeHeight)
-            Color.black.frame(height: solidHeight)
+            Color.backgroundBottom.frame(height: solidHeight)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
