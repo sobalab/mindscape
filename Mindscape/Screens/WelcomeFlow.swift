@@ -97,22 +97,47 @@ struct OnboardingQuestion: View {
                     .padding(.bottom, 28)
 
                 answers
-                    .padding(.bottom, 40)
-
-                PrimaryButton(title: step == .about ? "Let’s Go" : "Continue",
-                              isEnabled: canContinue) {
-                    if step == .about { model.hasOnboarded = true } else { onContinue() }
-                }
             }
             .padding(.horizontal, Theme.screenInset)
             .padding(.top, 8)
-            .padding(.bottom, 40)
+            .padding(.bottom, 24)
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
+        // The CTA is bottom-anchored in every onboarding frame. Pinning it here (rather
+        // than inline) keeps it above the keyboard on the "about" step, so it stays
+        // tappable while the Age numeric keypad — which has no return key — is up.
+        .safeAreaInset(edge: .bottom) {
+            PrimaryButton(title: step == .about ? "Let’s Go" : "Continue",
+                          isEnabled: canContinue) {
+                dismissKeyboard()
+                if step == .about { model.hasOnboarded = true } else { onContinue() }
+            }
+            .padding(.horizontal, Theme.screenInset)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(
+                LinearGradient(colors: [Color.backgroundBottom.opacity(0), Color.backgroundBottom],
+                               startPoint: .top, endPoint: .bottom)
+                    .allowsHitTesting(false)
+            )
+        }
         .mindscapeBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        // Lets the numeric Age keypad be dismissed, since it has no return key.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done", action: dismissKeyboard)
+                    .foregroundStyle(.accentPurple)
+            }
+        }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     // MARK: Per-step content
