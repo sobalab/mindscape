@@ -18,7 +18,7 @@ struct JournalFlow: View {
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .compose:
-                        JournalComposer { entry in
+                        JournalComposer(onBack: { if !path.isEmpty { path.removeLast() } }) { entry in
                             model.addEntry(entry)
                             path.append(.saved(entry.id))
                         }
@@ -192,7 +192,7 @@ struct EntryCard: View {
 
 struct JournalComposer: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
+    var onBack: () -> Void = {}
     @State private var mood: Mood?
     @State private var text = ""
     @State private var tags: Set<String> = []
@@ -210,7 +210,7 @@ struct JournalComposer: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    BackLink { dismiss() }
+                    BackLink { onBack() }
                         .padding(.leading, -10)
                     Spacer()
                     DatePill(date: .now)

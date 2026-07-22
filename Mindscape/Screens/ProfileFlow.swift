@@ -9,9 +9,11 @@ struct ProfileFlow: View {
         NavigationStack(path: $path) {
             ProfileScreen { path.append($0) }
                 .navigationDestination(for: Route.self) { route in
+                    // Pop from the path directly — a hidden nav bar can leave the
+                    // environment's `dismiss` inert on a value-pushed screen.
                     switch route {
-                    case .notifications: NotificationsScreen()
-                    case .connect:       ConnectSupportScreen()
+                    case .notifications: NotificationsScreen { if !path.isEmpty { path.removeLast() } }
+                    case .connect:       ConnectSupportScreen { if !path.isEmpty { path.removeLast() } }
                     }
                 }
         }
@@ -246,7 +248,7 @@ struct ToggleRow: View {
 
 struct NotificationsScreen: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
+    var onBack: () -> Void = {}
 
     private let times = ["8:00 AM", "12:00 PM", "6:00 PM", "9:00 PM"]
 
@@ -255,7 +257,7 @@ struct NotificationsScreen: View {
 
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                BackLink { dismiss() }
+                BackLink { onBack() }
                     .padding(.leading, -10)
                     .padding(.bottom, 14)
 

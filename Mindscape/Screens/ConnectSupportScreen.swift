@@ -9,7 +9,7 @@ struct Professional: Identifiable, Hashable {
 }
 
 struct ConnectSupportScreen: View {
-    @Environment(\.dismiss) private var dismiss
+    var onBack: () -> Void = {}
     @State private var providerCode = ""
     @State private var requestSent = false
 
@@ -22,7 +22,7 @@ struct ConnectSupportScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                BackLink { dismiss() }
+                BackLink { onBack() }
                     .padding(.leading, -10)
                     .padding(.bottom, 14)
 

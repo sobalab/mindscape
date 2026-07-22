@@ -15,7 +15,7 @@ struct InsightsFlow: View {
                     switch route {
                     // Pop explicitly from the path: with the nav bar hidden, the
                     // environment's `dismiss` doesn't reliably pop a value-pushed view.
-                    case .observation: AIObservationDetail { path.removeLast() }
+                    case .observation: AIObservationDetail { if !path.isEmpty { path.removeLast() } }
                     }
                 }
         }
